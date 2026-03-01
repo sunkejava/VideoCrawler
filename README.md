@@ -44,30 +44,48 @@ VideoCrawler/
 
 ## 🚀 快速开始
 
-### 1. 后端启动
+### 方式一：使用启动脚本（推荐）
 
+**Linux/macOS:**
+```bash
+# 启动后端
+./start-api.sh
+
+# 启动前端（新终端）
+./start-web.sh
+```
+
+**Windows:**
+```bash
+# 启动后端
+start-api.bat
+
+# 启动前端（新终端）
+start-web.bat
+```
+
+### 方式二：手动启动
+
+**1. 后端启动**
 ```bash
 cd src/VideoCrawler.Api
 dotnet restore
 dotnet run
 ```
-
 API 将运行在 `http://localhost:5000`
 
-### 2. 前端启动
-
+**2. 前端启动**
 ```bash
 cd src/VideoCrawler.Web
 npm install
 npm run dev
 ```
-
 前端将运行在 `http://localhost:5173`
 
-### 3. 运行测试
-
+**3. 运行测试**
 ```bash
-dotnet test
+cd tests/VideoCrawler.Test
+dotnet run
 ```
 
 ## 📖 API 文档

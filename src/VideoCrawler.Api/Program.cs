@@ -14,6 +14,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
         ?? "Data Source=vodcrawler.db"));
 
+// Configure options
+builder.Services.Configure<CacheOptions>(builder.Configuration.GetSection("Cache"));
+builder.Services.Configure<CrawlerOptions>(builder.Configuration.GetSection("Crawler"));
+
 // Repositories
 builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 builder.Services.AddScoped<ICrawlerTaskRepository, CrawlerTaskRepository>();
@@ -27,9 +31,11 @@ builder.Services.AddScoped<IHttpClientService, HttpClientService>();
 // HTTP Client with Polly
 builder.Services.AddHttpClient<HttpClientService>((sp, client) =>
 {
+    var options = sp.GetRequiredService<IOptions<CrawlerOptions>>().Value;
     client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9");
+    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
 })
 .AddPolicyHandler(GetRetryPolicy())
 .AddPolicyHandler(GetTimeoutPolicy());
@@ -57,7 +63,7 @@ builder.Services.AddSwaggerGen(c =>
     { 
         Title = "VideoCrawler API", 
         Version = "v1",
-        Description = "视频爬取系统 API - .NET 10 DDD 架构"
+        Description = "视频爬取系统 API - .NET 10 DDD 架构\n\n支持自动爬取、缓存管理、任务调度等功能"
     });
 });
 
@@ -68,7 +74,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
@@ -78,7 +85,11 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "VideoCrawler API V1");
+        c.RoutePrefix = string.Empty; // 设置 Swagger UI 为根路径
+    });
 }
 
 app.UseHttpsRedirection();
@@ -91,6 +102,22 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.EnsureCreatedAsync();
+    Console.WriteLine("✅ 数据库初始化完成");
 }
+
+// 创建缓存目录
+var cacheOptions = builder.Configuration.GetSection("Cache").Get<CacheOptions>() ?? new CacheOptions();
+Directory.CreateDirectory(cacheOptions.CachePath);
+Directory.CreateDirectory(Path.Combine(cacheOptions.CachePath, "videos"));
+Directory.CreateDirectory(Path.Combine(cacheOptions.CachePath, "covers"));
+Console.WriteLine($"✅ 缓存目录已创建：{cacheOptions.CachePath}");
+
+Console.WriteLine("\n========================================");
+Console.WriteLine("🎬 VideoCrawler API 已启动");
+Console.WriteLine("========================================");
+Console.WriteLine($"📊 Swagger UI: http://localhost:5000");
+Console.WriteLine($"📁 缓存路径：{cacheOptions.CachePath}");
+Console.WriteLine($"📄 数据库：vodcrawler.db");
+Console.WriteLine("========================================\n");
 
 app.Run();
