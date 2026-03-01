@@ -22,7 +22,6 @@ builder.Services.AddScoped<IVideoCacheService, VideoCacheService>();
 
 // Crawler services
 builder.Services.AddScoped<IVideoCrawlerService, VideoCrawlerService>();
-builder.Services.AddScoped<IVideoSiteParser, HuaduZYParser>();
 builder.Services.AddScoped<IHttpClientService, HttpClientService>();
 
 // HTTP Client with Polly

@@ -12,8 +12,10 @@ public class CrawlerTest
         Console.WriteLine("========================================\n");
 
         var targetUrl = "https://b.huaduzy.cc/vodshow/tangxinVlog-----------.html";
-        var parser = new AppleCMSParser();
+        var parser = new HuaduZYParser();
         var analyzer = new SiteAnalyzer();
+        
+        Console.WriteLine($"📋 每页视频数：{parser.VideosPerPage} 条\n");
 
         // 测试 1: 网站结构分析
         Console.WriteLine("📊 测试 1: 网站结构分析");
