@@ -5,6 +5,7 @@ using VideoCrawler.Infrastructure.Data;
 using VideoCrawler.Infrastructure.Repositories;
 using VideoCrawler.Infrastructure.Services;
 using VideoCrawler.Application.Services;
+using VideoCrawler.Infrastructure.Crawler;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,15 +19,36 @@ builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 builder.Services.AddScoped<ICrawlerTaskRepository, CrawlerTaskRepository>();
 builder.Services.AddScoped<IWorkerService, WorkerService>();
 builder.Services.AddScoped<IVideoCacheService, VideoCacheService>();
-builder.Services.AddScoped<IVideoCrawlerService, VideoCrawlerService>();
 
-// Configure cache options
-builder.Services.Configure<CacheOptions>(options =>
+// Crawler services
+builder.Services.AddScoped<IVideoCrawlerService, VideoCrawlerService>();
+builder.Services.AddScoped<IVideoSiteParser, HuaduZYParser>();
+builder.Services.AddScoped<IHttpClientService, HttpClientService>();
+
+// HTTP Client with Polly
+builder.Services.AddHttpClient<HttpClientService>((sp, client) =>
 {
-    options.CachePath = builder.Configuration.GetValue<string>("Cache:Path") ?? "./cache";
-    options.DefaultExpiration = TimeSpan.FromDays(30);
-    options.MaxCacheSizeBytes = 10L * 1024 * 1024 * 1024;
-});
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    client.DefaultRequestHeaders.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8");
+    client.Timeout = TimeSpan.FromSeconds(30);
+})
+.AddPolicyHandler(GetRetryPolicy())
+.AddPolicyHandler(GetTimeoutPolicy());
+
+static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+}
+
+static IAsyncPolicy<HttpResponseMessage> GetTimeoutPolicy()
+{
+    return HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.RequestTimeout)
+        .WaitAndRetryAsync(1, _ => TimeSpan.FromSeconds(10));
+}
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

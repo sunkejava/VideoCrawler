@@ -140,11 +140,30 @@ dotnet test
 - [x] 基础仓储实现
 - [x] API 控制器
 - [x] 前端页面
-- [ ] 网站解析器（HtmlAgilityPack）
-- [ ] M3U8 下载器
+- [x] 网站解析器（HtmlAgilityPack）- 支持苹果 CMS 和 JSON-LD
+- [x] HTTP 爬虫服务（Polly 重试）
+- [x] 网站结构分析工具
+- [ ] M3U8 完整下载器（TS 分片合并）
 - [ ] 工作节点分布式支持
 - [ ] 定时任务调度
 - [ ] 用户认证授权
+
+## 🛠️ 调试工具
+
+### 分析网站结构
+```bash
+GET /api/debug/analyze?url=https://b.huaduzy.cc/vodshow/tangxinVlog-----------.html
+```
+
+### 测试爬取列表
+```bash
+GET /api/debug/test-list?url=https://b.huaduzy.cc/vodshow/tangxinVlog-----------.html&maxCount=10
+```
+
+### 测试爬取详情
+```bash
+GET /api/debug/test-detail?url=https://b.huaduzy.cc/voddetail/123.html
+```
 
 ## 🤝 贡献
 

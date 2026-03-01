@@ -110,106 +110,14 @@ public class WorkerService : IWorkerService
     }
 }
 
-public class VideoCacheService : IVideoCacheService
+public class WorkerInfo
 {
-    private readonly IVideoRepository _videoRepository;
-    private readonly string _cacheRoot;
-    private readonly ILogger<VideoCacheService> _logger;
-
-    public VideoCacheService(
-        IVideoRepository videoRepository,
-        IOptions<CacheOptions> options,
-        ILogger<VideoCacheService> logger)
-    {
-        _videoRepository = videoRepository;
-        _cacheRoot = options.Value.CachePath;
-        _logger = logger;
-
-        Directory.CreateDirectory(_cacheRoot);
-        Directory.CreateDirectory(Path.Combine(_cacheRoot, "videos"));
-        Directory.CreateDirectory(Path.Combine(_cacheRoot, "covers"));
-    }
-
-    public Task<bool> IsCachedAsync(string sourceUrl)
-    {
-        // TODO: 检查数据库缓存状态
-        return Task.FromResult(false);
-    }
-
-    public Task<string?> GetCachedVideoPathAsync(string sourceUrl)
-    {
-        return Task.FromResult<string?>(null);
-    }
-
-    public Task<string?> GetCachedCoverPathAsync(string sourceUrl)
-    {
-        return Task.FromResult<string?>(null);
-    }
-
-    public Task CacheVideoAsync(Video video)
-    {
-        // TODO: 实现视频缓存
-        return Task.CompletedTask;
-    }
-
-    public Task CacheCoverImageAsync(Video video)
-    {
-        // TODO: 实现封面缓存
-        return Task.CompletedTask;
-    }
-
-    public Task CleanExpiredCacheAsync(TimeSpan expiration)
-    {
-        // TODO: 实现过期缓存清理
-        return Task.CompletedTask;
-    }
-
-    public async Task<CacheStats> GetCacheStatsAsync()
-    {
-        var totalVideos = await _videoRepository.GetTotalCountAsync();
-        var cachedVideos = await _videoRepository.GetCachedCountAsync();
-        
-        var totalSize = CalculateCacheSize();
-
-        return new CacheStats
-        {
-            TotalVideos = totalVideos,
-            CachedVideos = cachedVideos,
-            TotalSizeBytes = totalSize,
-            LastCleanup = DateTime.UtcNow
-        };
-    }
-
-    private long CalculateCacheSize()
-    {
-        try
-        {
-            var videoDir = Path.Combine(_cacheRoot, "videos");
-            var coverDir = Path.Combine(_cacheRoot, "covers");
-            
-            var videoSize = GetDirectorySize(videoDir);
-            var coverSize = GetDirectorySize(coverDir);
-            
-            return videoSize + coverSize;
-        }
-        catch
-        {
-            return 0;
-        }
-    }
-
-    private long GetDirectorySize(string path)
-    {
-        if (!Directory.Exists(path)) return 0;
-        
-        return Directory.GetFiles(path, "*", SearchOption.AllDirectories)
-            .Sum(f => new FileInfo(f).Length);
-    }
-}
-
-public class CacheOptions
-{
-    public string CachePath { get; set; } = "./cache";
-    public TimeSpan DefaultExpiration { get; set; } = TimeSpan.FromDays(30);
-    public long MaxCacheSizeBytes { get; set; } = 10L * 1024 * 1024 * 1024; // 10GB
+    public string WorkerId { get; set; } = string.Empty;
+    public string WorkerName { get; set; } = string.Empty;
+    public string Status { get; set; } = "Idle";
+    public string? CurrentTaskId { get; set; }
+    public int CompletedTasks { get; set; }
+    public int FailedTasks { get; set; }
+    public DateTime LastHeartbeat { get; set; }
+    public DateTime RegisteredAt { get; set; }
 }
