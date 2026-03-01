@@ -194,6 +194,21 @@ public class Program
 {
     public static async Task Main(string[] args)
     {
-        await CrawlerTest.RunTestAsync();
+        Console.WriteLine("选择测试模式:");
+        Console.WriteLine("1. 完整集成测试");
+        Console.WriteLine("2. 仅爬取功能测试");
+        Console.WriteLine("按 Enter 键运行完整测试...\n");
+        
+        var key = Console.ReadKey();
+        Console.WriteLine();
+        
+        if (key.Key == ConsoleKey.D2 || key.Key == ConsoleKey.NumPad2)
+        {
+            await CrawlerTest.RunTestAsync();
+        }
+        else
+        {
+            await IntegrationTest.RunAllTestsAsync();
+        }
     }
 }
